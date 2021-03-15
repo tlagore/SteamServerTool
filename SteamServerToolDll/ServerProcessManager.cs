@@ -8,9 +8,11 @@
 
     internal class ServerProcessManager
     {
-        private SteamServerInfo serverInfo;
+        private readonly SteamServerInfo serverInfo;
 
-        private CancellationToken cancellationToken;
+        private readonly CancellationToken cancellationToken;
+
+        private readonly ILog logger;
 
         private readonly object processLock = new object();
 
@@ -45,11 +47,11 @@
         // Delegate type to be used as the Handler Routine for SCCH
         delegate Boolean ConsoleCtrlDelegate(uint CtrlType);
 
-
-        public ServerProcessManager(SteamServerInfo serverInfo, CancellationToken token)
+        public ServerProcessManager(SteamServerInfo serverInfo, CancellationToken token, ILog log)
         {
             this.serverInfo = serverInfo;
             this.cancellationToken = token;
+            this.logger = log;
 
             this.healthCheckTimer = new SystemTimer()
             {
@@ -74,10 +76,10 @@
 
             if (this.process == null || this.process.HasExited)
             {
-                IOUtil.Log("Process is null but {0}=true. Attempting to restart the server.", nameof(ServerRunning));
+                this.logger.Info("Process is null but {0}=true. Attempting to restart the server.", nameof(ServerRunning));
                 if (!StartServer(true))
                 {
-                    IOUtil.Log("Failed to start server!");
+                    this.logger.Info("Failed to start server!");
                 }
             }
 
@@ -110,7 +112,7 @@
                 {
                     if (this.process != null && !this.process.HasExited)
                     {
-                        IOUtil.Log("Server was still running when StartServer called. Attempting to stop server gracefully.");
+                        this.logger.Info("Server was still running when StartServer called. Attempting to stop server gracefully.");
 
                         if (!this.StopServer())
                         {
@@ -122,7 +124,7 @@
                     {
                         foreach (var envValuePair in this.serverInfo.EnvironmentArgs)
                         {
-                            IOUtil.Log("Setting env variable '{0}'='{1}'", envValuePair.Key, envValuePair.Value);
+                            this.logger.Info("Setting env variable '{0}'='{1}'", envValuePair.Key, envValuePair.Value);
                             Environment.SetEnvironmentVariable(envValuePair.Key, envValuePair.Value);
                         }
                     }
@@ -149,7 +151,7 @@
                 }
                 catch (Exception ex)
                 {
-                    IOUtil.Log("Error while trying to start server! Exception: {0}", ex.Message);
+                    this.logger.Info("Error while trying to start server! Exception: {0}", ex.Message);
                 }
             }
 
@@ -196,7 +198,7 @@
                         {
                             if (!GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0))
                             {
-                                IOUtil.Log("Failed to end server gracefully!");
+                                this.logger.Info("Failed to end server gracefully!");
 
                                 if (this.forceKill)
                                 {
@@ -212,20 +214,20 @@
                             }
                             else
                             {
-                                IOUtil.Log("Server exitted gracefully.");
+                                this.logger.Info("Server exitted gracefully.");
                             }
 
                             ServerRunning = false;
                         }
                         catch (Exception ex)
                         {
-                            IOUtil.Log($"Exception!! {ex.Message}");
+                            this.logger.Info($"Exception!! {ex.Message}");
 
                             try
                             {
                                 if (this.process != null && !this.process.HasExited)
                                 {
-                                    IOUtil.Log("Server had not exited, killing application.");
+                                    this.logger.Info("Server had not exited, killing application.");
                                     this.process.Kill();
                                     this.ServerRunning = false;
                                 }
@@ -249,7 +251,7 @@
                 }
                 catch (Exception ex)
                 {
-                    IOUtil.Log($"Error while trying to start server! Exception: {ex.Message}");
+                    this.logger.Info($"Error while trying to start server! Exception: {ex.Message}");
                     ServerRunning = false;
                 }
             }

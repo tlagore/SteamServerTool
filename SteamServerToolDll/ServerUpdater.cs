@@ -32,12 +32,17 @@
     {
         private readonly SteamServerToolConfig config;
 
+        private readonly ILog logger;
+
+        private readonly CancellationToken cancellationToken;
+
         private readonly string versionFileName;
 
-        public ServerUpdater(SteamServerToolConfig config, CancellationToken token)
+        public ServerUpdater(SteamServerToolConfig config, CancellationToken token, ILog log)
         {
             this.config = config;
-
+            this.logger = log;
+            this.cancellationToken = token;
             string serverNameStripped = Regex.Replace(config.ServerInfo.ServerName, "[^a-zA-Z0-9]", "");
             this.versionFileName = string.Format(SteamServerToolConstants.VersionFile, serverNameStripped.ToLower());
         }
@@ -64,7 +69,7 @@
                         $"\r\nPlease ensure the config is properly set at {SteamServerToolConstants.ConfigLocation}. If you need a steam API key " +
                         $"go to 'http://steamcommunity.com/dev/apikey'";
 
-                IOUtil.FailIfFlagged(errorMessage, this.config.FailOnException);
+                this.logger.Error(errorMessage);
             }
 
             return currentVersion != onlineVersion;
@@ -84,7 +89,7 @@
             return await client.GetStringAsync(uri);
         }
 
-        public async static Task<string> GetGameNameAsync(int appId, string key)
+        public async static Task<string> GetGameNameAsync(int appId, string key, ILog log)
         {
             string versionJson = await GetVersionJson(appId, key);
             string name = "";
@@ -100,7 +105,7 @@
             }
             catch (Exception ex)
             {
-                IOUtil.Log("Failed to get game name: '{0}'", ex.ToString());
+                log.Info("Failed to get game name: '{0}'", ex.ToString());
             }
 
             return name;
@@ -121,7 +126,7 @@
             }
             catch (Exception ex)
             {
-                IOUtil.FailIfFlagged(ex.ToString(), this.config.FailOnException);
+                this.logger.Error(ex.ToString());
             }
 
             return await Task.FromResult(version);
@@ -141,7 +146,7 @@
             }
             catch (FileNotFoundException ex)
             {
-                IOUtil.Log("Could not get current version: '{0}' ", ex.Message);
+                this.logger.Info("Could not get current version: '{0}' ", ex.Message);
             }
 
             return version;
@@ -170,7 +175,7 @@
 
                 updateProcess = Process.Start(pInfo);
 
-                IOUtil.Log("Starting update process. Will wait 15 minutes for update to finish");
+                this.logger.Info("Starting update process. Will wait 15 minutes for update to finish");
                 updateProcess.WaitForExit((int)TimeSpan.FromMinutes(15).TotalMilliseconds);
 
                 if (!updateProcess.HasExited)
@@ -184,7 +189,7 @@
             }
             catch (Exception ex)
             {
-                IOUtil.Log("Error while trying to start server! Exception: {0}", ex.Message);
+                this.logger.Info("Error while trying to start server! Exception: {0}", ex.Message);
             }
 
             return true;

@@ -11,25 +11,23 @@
 
         private readonly ServerProcessManager serverProcessManager;
 
-        private readonly SteamServerToolConfig config;
+        private readonly ILog logger;
 
         private readonly CancellationToken cancellationToken;
 
         private readonly SystemTimer updateTimer;
 
-        public ServerManager(SteamServerToolConfig config, CancellationToken token)
+        public ServerManager(SteamServerToolConfig config, CancellationToken token, ILog log)
         {
             Check.Argument.NotNull(config, nameof(config));
 
+            this.logger = log;
+
             this.VerifyConfig(config);
 
-            this.config = config;
-
             this.cancellationToken = token;
-
-            this.serverUpdater = new ServerUpdater(config, token);
-
-            this.serverProcessManager = new ServerProcessManager(config.ServerInfo, token);
+            this.serverUpdater = new ServerUpdater(config, token, log);
+            this.serverProcessManager = new ServerProcessManager(config.ServerInfo, token, log);
 
             this.updateTimer = new SystemTimer()
             {
@@ -59,11 +57,11 @@
             Check.Argument.IsPositive(config.ServerInfo.ServerInstallationId, nameof(config.ServerInfo.ServerInstallationId));
             Check.Argument.IsPositive(config.ServerInfo.ServerUpdateId, nameof(config.ServerInfo.ServerUpdateId));
 
-            string gameName = await ServerUpdater.GetGameNameAsync(config.ServerInfo.ServerUpdateId, config.SteamApiKey);
+            string gameName = await ServerUpdater.GetGameNameAsync(config.ServerInfo.ServerUpdateId, config.SteamApiKey, this.logger);
 
             if (config.ServerUpdateTimeSeconds < minUpdateInterval)
             {
-                IOUtil.Log("{0} was set to lower than {1} seconds. Set the interval to {1} seconds.", nameof(config.ServerUpdateTimeSeconds), minUpdateInterval);
+                this.logger.Info("{0} was set to lower than {1} seconds. Set the interval to {1} seconds.", nameof(config.ServerUpdateTimeSeconds), minUpdateInterval);
                 config.ServerUpdateTimeSeconds = minUpdateInterval;
                 changed = true;
             }
@@ -86,7 +84,7 @@
                 Guid guid = new Guid();
                 string nameFormat = "{0}{1}";
                 string name = string.Format(nameFormat, gameName != null ? $"{gameName}_" : "", guid);
-                IOUtil.Log("{0} was empty or null, assigning random name: {1}.", 
+                this.logger.Info("{0} was empty or null, assigning random name: {1}.", 
                     nameof(config.ServerInfo.ServerName),
                     name);
 
@@ -96,7 +94,7 @@
 
             if (changed)
             {
-                IOUtil.Log("Config validation changed the configuration, writing new configurations to file.");
+                this.logger.Info("Config validation changed the configuration, writing new configurations to file.");
                 ConfigUtil.WriteJsonConfig(SteamServerToolConstants.ConfigLocation, config);
             }
         }
@@ -105,11 +103,11 @@
         {
             if (this.cancellationToken.IsCancellationRequested)
             {
-                IOUtil.Log("Cancellation is requested, killing server.");
+                this.logger.Info("Cancellation is requested, killing server.");
 
                 if (!this.serverProcessManager.StopServer())
                 {
-                    IOUtil.FailIfFlagged("Failed to stop the server, not going to update.", config.FailOnException);
+                    this.logger.Error("Failed to stop the server, not going to update.");
                 }
 
                 this.cancellationToken.ThrowIfCancellationRequested();
@@ -117,25 +115,25 @@
 
             this.updateTimer.Stop();
 
-            IOUtil.Log("Checking for updates..");
+            this.logger.Info("Checking for updates..");
 
             if (await this.serverUpdater.UpdatesRequired())
             {
                 if (!this.serverProcessManager.StopServer())
                 {
-                    IOUtil.FailIfFlagged("Failed to stop the server, not going to update.", config.FailOnException);
+                    this.logger.Error("Failed to stop the server, not going to update.");
                 }
                 else
                 {
                     if (!await this.serverUpdater.UpdateServer())
                     {
-                        IOUtil.FailIfFlagged("Unable to update server!", config.FailOnException);
+                        this.logger.Error("Unable to update server!");
                     }
                 }
 
                 if (!this.serverProcessManager.StartServer(false))
                 {
-                    IOUtil.FailIfFlagged("Failed to start the server.", config.FailOnException);
+                    this.logger.Error("Failed to start the server.");
                 }
             }
 
@@ -143,7 +141,7 @@
             {
                 if (!this.serverProcessManager.StartServer(false))
                 {
-                    IOUtil.FailIfFlagged("Failed to start the server.", config.FailOnException);
+                    this.logger.Error("Failed to start the server.");
                 }
             }
 
@@ -156,13 +154,13 @@
             {
                 if (!await this.serverUpdater.UpdateServer())
                 {
-                    IOUtil.FailIfFlagged("Failed to update server!", config.FailOnException);
+                    this.logger.Error("Failed to update server!");
                 }
             }
 
             if (!this.serverProcessManager.StartServer(false))
             {
-                IOUtil.FailIfFlagged("Failed to start the server!", config.FailOnException);
+                this.logger.Error("Failed to start the server!");
             }
 
             this.updateTimer.Start();
@@ -174,7 +172,7 @@
 
             if (!this.serverProcessManager.StopServer())
             {
-                IOUtil.FailIfFlagged("Failed to stop the server.", config.FailOnException);
+                this.logger.Error("Failed to stop the server.");
             }
         }
     }

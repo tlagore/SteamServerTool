@@ -8,25 +8,29 @@
     {
         private static ServerManager manager;
         private static CancellationTokenSource tokenSource = new CancellationTokenSource();
+        private static ILog logger = new ConsoleLogger();
 
         static void Main(string[] args)
         {
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Close);
             SteamServerToolConfig config = ConfigUtil.GetConfig<SteamServerToolConfig>(SteamServerToolConstants.ConfigLocation, ConfigFileFormat.Json);
-            manager = new ServerManager(config, tokenSource.Token);
-            IOUtil.Log("Starting server");
+
+            logger.ThrowOnError = config.FailOnException;
+
+            manager = new ServerManager(config, tokenSource.Token, logger);
+            logger.Info("Starting server");
             manager.Start();
 
             while (true)
             {
                 Thread.Sleep((int)TimeSpan.FromMinutes(1).TotalMilliseconds);
-                IOUtil.Log("SteamServerTool Working...");
+                logger.Info("SteamServerTool Working...");
             }
         }
 
         public static void Close(object caller, ConsoleCancelEventArgs args)
         {
-            IOUtil.Log("Shutting down...");
+            logger.Info("Shutting down...");
             manager.Stop();
             tokenSource.Cancel();
         }
