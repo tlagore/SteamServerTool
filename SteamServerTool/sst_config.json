@@ -1,0 +1,19 @@
+{
+  "SteamCmdLocation": "C:\\tools\\steamcmd\\steamcmd.exe",
+  "SteamApiKey": "",
+  "Username": "anonymous",
+  "Password": "",
+  "FailOnException": true,
+  "ServerUpdateTimeSeconds": 60,
+  "ServerInfo": {
+    "EnvironmentArgs": {
+      "SteamAppId": "892970"
+    },
+    "ServerName": "Valheim -- Server",
+    "StartServerCmd": "C:\\valheim\\valheim_server.exe",
+    "StartServerArgs": "nographics -batchmode -name \"John's Playground\" -port 2456 -world \"My World Name\" -password \"myserverpassword\" -public 0",
+    "ServerInstallLocation": "C:\\valheim",
+    "ServerInstallationId": "896660",
+    "ServerUpdateId": "892970"
+  }
+}
