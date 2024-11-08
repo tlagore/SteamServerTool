@@ -13,7 +13,7 @@
         static void Main(string[] args)
         {
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Close);
-            SteamServerToolConfig config = ConfigUtil.GetConfig<SteamServerToolConfig>(SteamServerToolConstants.ConfigLocation, ConfigFileFormat.Json);
+            SteamServerToolConfig config = ConfigUtil.GetConfig<SteamServerToolConfig>(SteamServerToolConstants.ConfigLocation, ConfigFileFormat.Json, logger);
 
             logger.ThrowOnError = config.FailOnException;
 

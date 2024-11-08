@@ -18,31 +18,12 @@
 
         private bool shouldBeRunning;
 
-        private bool forceKill = true;
-
-        private readonly double timeToWaitForExitMs = TimeSpan.FromMinutes(2).TotalMilliseconds;
+        private readonly double timeToWaitForExitMs = TimeSpan.FromSeconds(30).TotalMilliseconds;
 
         private readonly SystemTimer healthCheckTimer;
 
         private Process process;
 
-        internal const int CTRL_C_EVENT = 0;
-
-
-        [DllImport("kernel32.dll")]
-        internal static extern bool GenerateConsoleCtrlEvent(uint dwCtrlEvent, uint dwProcessGroupId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool AttachConsole(uint dwProcessId);
-
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        internal static extern bool FreeConsole();
-
-        [DllImport("kernel32.dll")]
-        static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate HandlerRoutine, bool Add);
-
-        [DllImport("kernel32.dll")]
-        static extern uint GetLastError();
 
         // Delegate type to be used as the Handler Routine for SCCH
         delegate Boolean ConsoleCtrlDelegate(uint CtrlType);
@@ -161,7 +142,7 @@
         /// <summary>
         /// Stop the server
         /// </summary>
-        /// <returns>true if server has exitted</returns>
+        /// <returns>true if server has exited</returns>
         public bool StopServer()
         {
             lock (this.processLock)
@@ -170,11 +151,14 @@
 
                 if (!ServerRunning)
                 {
+                    logger.Info("Server wasn't running. No need to shut down.");
                     return true;
                 }
 
                 try
                 {
+                    logger.Info($"Attempting to shut down the server.");
+
                     if (this.process == null)
                     {
                         throw new Exception("Server is running but process is null.");
@@ -185,67 +169,57 @@
                         return true;
                     }
 
-                    // If this somehow ran as a console application we need to first free the console so that we can attach it to the running server
-                    if (!FreeConsole())
+                    try
                     {
-                        throw new Exception($"Error when freeing console. System error code: {GetLastError()}. See https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes for specific error codes");
-                    }
+                        logger.Info("Asking server to close");
 
-                    if (AttachConsole((uint)process.Id))
+                        Process childProcess = Process.GetProcessesByName(SteamServerToolConstants.Windows64ApplicationName)[0];
+                        childProcess.CloseMainWindow();
+
+                        childProcess.WaitForExit((int)timeToWaitForExitMs);
+
+                        if (!childProcess.HasExited)
+                        {
+                            logger.Warn("Process didn't exit in a proper amount of time. Attempting to kill the process.");
+                            childProcess.Kill();
+                            childProcess.WaitForExit((int)timeToWaitForExitMs);
+
+                            if (!childProcess.HasExited)
+                            {
+                                throw new Exception("Failed to kill process. Aborting server");
+                            }
+
+                            logger.Warn("Service killed successfully.");
+                        }
+                        else
+                        {
+                            this.logger.Info("Server exitted gracefully.");
+                        }
+
+                        ServerRunning = false;
+                    }
+                    catch (Exception ex)
                     {
-                        SetConsoleCtrlHandler(null, false);
+                        this.logger.Info($"Exception!! {ex.Message}");
+
                         try
                         {
-                            if (!GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0))
+                            if (this.process != null && !this.process.HasExited)
                             {
-                                this.logger.Info("Failed to end server gracefully!");
-
-                                if (this.forceKill)
-                                {
-                                    process.Kill();
-                                }
-                            }
-
-                            process.WaitForExit((int)timeToWaitForExitMs);
-
-                            if (!process.HasExited)
-                            {
-                                throw new Exception("Process didn't exit in a proper amount of time.");
-                            }
-                            else
-                            {
-                                this.logger.Info("Server exitted gracefully.");
-                            }
-
-                            ServerRunning = false;
-                        }
-                        catch (Exception ex)
-                        {
-                            this.logger.Info($"Exception!! {ex.Message}");
-
-                            try
-                            {
-                                if (this.process != null && !this.process.HasExited)
-                                {
-                                    this.logger.Info("Server had not exited, killing application.");
-                                    this.process.Kill();
-                                    this.ServerRunning = false;
-                                }
-                            }
-                            catch (Exception innerEx)
-                            {
-                                Console.Write($"FATAL:: Failed to forcefully kill the server with exception {innerEx.Message}. Rethrowing.");
-                                throw innerEx;
+                                this.logger.Info("Server had not exited, killing application.");
+                                this.process.Kill();
+                                this.ServerRunning = false;
                             }
                         }
-                        finally
+                        catch (Exception innerEx)
                         {
-                            FreeConsole();
+                            this.logger.Error($"FATAL:: Failed to forcefully kill the server with exception {innerEx.Message}. Rethrowing.");
+                            throw innerEx;
                         }
                     }
-                    else
+                    finally
                     {
-                        throw new Exception($"Failed to AttachConsole with error code {GetLastError()}");
+                        this.process.Kill();
                     }
                 }
                 catch (Exception ex)

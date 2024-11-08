@@ -115,26 +115,37 @@
 
             this.updateTimer.Stop();
 
-            this.logger.Info("Checking for updates..");
+            this.logger.Info("Checking for updates...");
 
             if (await this.serverUpdater.UpdatesRequired())
             {
+                this.logger.Info("Server updates are required. Updating server.");
+                this.logger.Info("Attempting to stop running server process");
                 if (!this.serverProcessManager.StopServer())
                 {
                     this.logger.Error("Failed to stop the server, not going to update.");
                 }
                 else
                 {
+                    this.logger.Info("Server process stopped, attempting to update the server.");
+
                     if (!await this.serverUpdater.UpdateServer())
                     {
                         this.logger.Error("Unable to update server!");
                     }
                 }
 
+                this.logger.Info("Updates finished, attempting to start the server.");
                 if (!this.serverProcessManager.StartServer(false))
                 {
                     this.logger.Error("Failed to start the server.");
+                } else
+                {
+                    this.logger.Info("Server started successfully.");
                 }
+            } else
+            {
+                this.logger.Info("Server version matches online version, no updates required.");
             }
 
             if (!this.serverProcessManager.ServerRunning)
@@ -150,12 +161,10 @@
 
         public async void Start()
         {
-            if (await this.serverUpdater.UpdatesRequired())
+            // Always attempt to update the server on first start. This will perform a verify on the installation if the version is up to date.
+            if (!await this.serverUpdater.UpdateServer())
             {
-                if (!await this.serverUpdater.UpdateServer())
-                {
-                    this.logger.Error("Failed to update server!");
-                }
+                this.logger.Error("Failed to update server!");
             }
 
             if (!this.serverProcessManager.StartServer(false))

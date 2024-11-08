@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30621.155
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SteamServerTool", "SteamServerTool\SteamServerTool.csproj", "{E6C8BCD8-A910-49F8-B756-A2E4E210EEF4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SteamServerToolDll", "SteamServerToolDll\SteamServerToolDll.csproj", "{B117A7FB-4176-48A1-B44F-97212F6A8F72}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SteamServerToolDll", "SteamServerToolDll\SteamServerToolDll.csproj", "{B117A7FB-4176-48A1-B44F-97212F6A8F72}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SteamServerToolService", "SteamServerToolService\SteamServerToolService.csproj", "{3ECFF083-5F87-4D27-ADFB-100853FABEEE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{B117A7FB-4176-48A1-B44F-97212F6A8F72}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B117A7FB-4176-48A1-B44F-97212F6A8F72}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B117A7FB-4176-48A1-B44F-97212F6A8F72}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3ECFF083-5F87-4D27-ADFB-100853FABEEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3ECFF083-5F87-4D27-ADFB-100853FABEEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3ECFF083-5F87-4D27-ADFB-100853FABEEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3ECFF083-5F87-4D27-ADFB-100853FABEEE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -138,7 +138,7 @@
             
             try
             {
-                Dictionary<string, GameVersion> versionInfo = ConfigUtil.GetConfig<Dictionary<string, GameVersion>>(this.versionFileName, ConfigFileFormat.Json);
+                Dictionary<string, GameVersion> versionInfo = ConfigUtil.GetConfig<Dictionary<string, GameVersion>>(this.versionFileName, ConfigFileFormat.Json, this.logger);
                 if (versionInfo != null && versionInfo.ContainsKey(SteamServerToolConstants.VersionGameKey))
                 {
                     version = versionInfo[SteamServerToolConstants.VersionGameKey].gameVersion;
@@ -175,13 +175,14 @@
 
                 updateProcess = Process.Start(pInfo);
 
-                this.logger.Info("Starting update process. Will wait 15 minutes for update to finish");
-                updateProcess.WaitForExit((int)TimeSpan.FromMinutes(15).TotalMilliseconds);
+                this.logger.Info("Starting update process. Will wait 60 minutes for update to finish");
+                updateProcess.WaitForExit((int)TimeSpan.FromMinutes(60).TotalMilliseconds);
 
                 if (!updateProcess.HasExited)
                 {
                     throw new Exception("Failed to update server in timely manner.");
                 }
+                this.logger.Info($"Server updated successfully. Writing new config version to {System.IO.Directory.GetCurrentDirectory()}\\{this.versionFileName}");
 
                 string versionJson = await GetVersionJson(config.ServerInfo.ServerUpdateId, config.SteamApiKey);
 

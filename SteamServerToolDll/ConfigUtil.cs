@@ -15,12 +15,14 @@
 
     public static class ConfigUtil
     {
-        public static T GetConfig<T>(string location, ConfigFileFormat format)
+        public static T GetConfig<T>(string location, ConfigFileFormat format, ILog logger)
         {
             switch (format)
             {
                 case ConfigFileFormat.Json:
                     string fileContent = ReadFile(location);
+                    logger.Info("Attempting to parse file contents:");
+                    logger.Info(fileContent.Replace("{","{{").Replace("}", "}}"));
                     return GetConfigFromJson<T>(fileContent);
                 default:
                     throw new ArgumentException(Format("Unsupported file format '{0}'", format));

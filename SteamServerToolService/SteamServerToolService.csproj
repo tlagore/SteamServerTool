@@ -44,17 +44,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Service1.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Service1.Designer.cs">
-      <DependentUpon>Service1.cs</DependentUpon>
-    </Compile>
+    <Compile Include="EventLogger.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SteamServerToolService.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="SteamServerToolService.Designer.cs">
+      <DependentUpon>SteamServerToolService.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SteamServerToolDll\SteamServerToolDll.csproj">
+      <Project>{b117a7fb-4176-48a1-b44f-97212f6a8f72}</Project>
+      <Name>SteamServerToolDll</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
