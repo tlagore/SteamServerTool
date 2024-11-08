@@ -193,7 +193,7 @@
 
                     if (AttachConsole((uint)process.Id))
                     {
-                        SetConsoleCtrlHandler(null, true);
+                        SetConsoleCtrlHandler(null, false);
                         try
                         {
                             if (!GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0))
@@ -240,7 +240,6 @@
                         }
                         finally
                         {
-                            SetConsoleCtrlHandler(null, false);
                             FreeConsole();
                         }
                     }
