@@ -26,6 +26,12 @@ namespace SteamServerToolService
 
         protected override void OnStart(string[] args)
         {
+            Thread t = new Thread(new ThreadStart(RunService));
+            t.Start();
+        }
+
+        private void RunService()
+        {
             EventLog log = new EventLog();
 
             ((ISupportInitialize)(this.EventLog)).BeginInit();
